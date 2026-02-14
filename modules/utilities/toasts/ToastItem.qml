@@ -23,7 +23,9 @@ StyledRect {
             return Colours.palette.m3secondary;
         if (root.modelData.type === Toast.Error)
             return Colours.palette.m3errorContainer;
-        return Colours.palette.m3surface;
+        if (Colours.transparency.enabled)
+            return Qt.alpha(Colours.palette.m3surfaceContainer, Math.max(Colours.transparency.base, 0.57));
+        return Colours.palette.m3surfaceContainer;
     }
 
     border.width: 1
@@ -43,7 +45,8 @@ StyledRect {
         radius: parent.radius
         opacity: parent.opacity
         z: -1
-        level: 3
+        level: Colours.transparency.enabled ? 0 : 3
+        visible: !Colours.transparency.enabled
     }
 
     RowLayout {
