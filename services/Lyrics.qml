@@ -10,7 +10,9 @@ Singleton {
 
     readonly property string currentLine: _currentLine
     readonly property bool available: _lines.length > 0
+    readonly property real currentLineDuration: _currentLineDuration
     property string _currentLine: ""
+    property real _currentLineDuration: 0
     property var _lines: []
     property string _lastTrackId: ""
 
@@ -37,6 +39,7 @@ Singleton {
     function updateCurrentLine(positionSec: real): void {
         if (_lines.length === 0) {
             _currentLine = "";
+            _currentLineDuration = 0;
             return;
         }
         let idx = 0;
@@ -47,6 +50,9 @@ Singleton {
             }
         }
         _currentLine = _lines[idx].text;
+        _currentLineDuration = idx < _lines.length - 1
+            ? _lines[idx + 1].time - _lines[idx].time
+            : 5;
     }
 
     function fetchForTrack(trackUrl: string): void {
@@ -58,7 +64,7 @@ Singleton {
             return;
         }
         const trackId = match[1];
-        if (trackId === _lastTrackId)
+        if (trackId === _lastTrackId && _lines.length > 0)
             return;
         _lastTrackId = trackId;
         _lines = [];
