@@ -233,6 +233,10 @@ Singleton {
             clock: {
                 showIcon: bar.clock.showIcon
             },
+            activeWindow: {
+                inverted: bar.activeWindow.inverted,
+                lyricsMode: bar.activeWindow.lyricsMode
+            },
             sizes: {
                 innerWidth: bar.sizes.innerWidth,
                 windowPreviewSize: bar.sizes.windowPreviewSize,
