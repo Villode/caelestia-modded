@@ -127,6 +127,23 @@ StyledRect {
             }
         }
 
+        // Brightness icon
+        WrappedLoader {
+            name: "brightness"
+            active: Config.bar.status.showBrightness
+
+            sourceComponent: MaterialIcon {
+                animate: true
+                text: {
+                    const b = Brightness.getMonitorForScreen(Quickshell.screens[0])?.brightness ?? 0.5;
+                    if (b <= 0.25) return "brightness_low";
+                    if (b <= 0.65) return "brightness_medium";
+                    return "brightness_high";
+                }
+                color: root.colour
+            }
+        }
+
         // Keyboard layout icon
         WrappedLoader {
             name: "kblayout"

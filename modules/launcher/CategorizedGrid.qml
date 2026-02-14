@@ -17,6 +17,7 @@ Flickable {
     property int preferredRows: 5
     property int gridColumns: 6
     property string sortMode: "name"
+    property int iconSize: 1
     property var customCategories: []
     property var appCategoryOverrides: ({})
     property var categoryRenames: ({})
@@ -140,6 +141,7 @@ Flickable {
                         id: gridItem
                         appEntry: modelData
                         visibilities: root.visibilities
+                        iconSize: root.iconSize
                         anchors.horizontalCenter: parent.horizontalCenter
 
                         onRightClicked: (src, entry) => root.appRightClicked(src, entry)

@@ -69,6 +69,7 @@ Item {
             maxHeight: root.maxHeight
             gridColumns: root.gridColumns
             sortMode: root.sortMode
+            iconSize: root.iconSize
             customCategories: root.customCategories
             appCategoryOverrides: root.appCategoryOverrides
             categoryRenames: root.categoryRenames
@@ -118,6 +119,7 @@ Item {
                             id: searchGridItem
                             appEntry: modelData
                             visibilities: root.visibilities
+                            iconSize: root.iconSize
                             anchors.horizontalCenter: parent.horizontalCenter
 
                             onRightClicked: (src, entry) => root.appRightClicked(src, entry)

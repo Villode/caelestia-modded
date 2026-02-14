@@ -222,6 +222,7 @@ Singleton {
             status: {
                 showAudio: bar.status.showAudio,
                 showMicrophone: bar.status.showMicrophone,
+                showBrightness: bar.status.showBrightness,
                 showKbLayout: bar.status.showKbLayout,
                 showNetwork: bar.status.showNetwork,
                 showWifi: bar.status.showWifi,

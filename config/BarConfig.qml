@@ -55,8 +55,8 @@ JsonObject {
 
     component ScrollActions: JsonObject {
         property bool workspaces: true
-        property bool volume: true
-        property bool brightness: true
+        property bool volume: false
+        property bool brightness: false
     }
 
     component Popouts: JsonObject {
@@ -92,8 +92,9 @@ JsonObject {
     }
 
     component Status: JsonObject {
-        property bool showAudio: false
+        property bool showAudio: true
         property bool showMicrophone: false
+        property bool showBrightness: true
         property bool showKbLayout: false
         property bool showNetwork: true
         property bool showWifi: true

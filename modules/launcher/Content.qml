@@ -123,6 +123,11 @@ Item {
     property real contextMenuY: 0
     property bool showingHiddenApps: false
 
+    // Hidden app context menu state
+    property var hiddenContextApp: null
+    property real hiddenMenuX: 0
+    property real hiddenMenuY: 0
+
     // Category context menu state
     property string contextCategoryName: ""
     property real catMenuX: 0
@@ -273,15 +278,26 @@ Item {
                                     // Restore overlay
                                     StateLayer {
                                         radius: Appearance.rounding.normal
+                                        acceptedButtons: Qt.LeftButton | Qt.RightButton
 
-                                        function onClicked(): void {
-                                            const appId = modelData?.id ?? "";
-                                            const hiddenApps = [...(Config.launcher.hiddenApps ?? [])];
-                                            const idx = hiddenApps.indexOf(appId);
-                                            if (idx !== -1) hiddenApps.splice(idx, 1);
-                                            Config.launcher.hiddenApps = hiddenApps;
-                                            Config.save();
-                                            if (hiddenApps.length === 0) root.showingHiddenApps = false;
+                                        function onClicked(event): void {
+                                            if (event && event.button === Qt.RightButton) {
+                                                // Show hidden app context menu
+                                                root.hiddenContextApp = modelData;
+                                                const pos = parent.mapToItem(root, parent.width / 2, parent.height);
+                                                root.hiddenMenuX = pos.x;
+                                                root.hiddenMenuY = pos.y;
+                                                hiddenAppContextMenu.active = null;
+                                                hiddenAppContextMenu.expanded = true;
+                                            } else {
+                                                const appId = modelData?.id ?? "";
+                                                const hiddenApps = [...(Config.launcher.hiddenApps ?? [])];
+                                                const idx = hiddenApps.indexOf(appId);
+                                                if (idx !== -1) hiddenApps.splice(idx, 1);
+                                                Config.launcher.hiddenApps = hiddenApps;
+                                                Config.save();
+                                                if (hiddenApps.length === 0) root.showingHiddenApps = false;
+                                            }
                                         }
                                     }
                                 }
@@ -355,7 +371,7 @@ Item {
                 layer.enabled: true
                 layer.effect: MultiEffect {
                     colorization: 1.0
-                    colorizationColor: Colours.palette.m3primary
+                    colorizationColor: Colours.palette.m3onSurfaceVariant
                 }
             }
 
@@ -537,6 +553,7 @@ Item {
         const pos = sourceItem.mapToItem(root, sourceItem.width / 2, sourceItem.height);
         contextMenuX = pos.x;
         contextMenuY = pos.y;
+        appContextMenu.active = null;
         appContextMenu.expanded = true;
         launcherMenu.expanded = false;
     }
@@ -610,6 +627,47 @@ Item {
     MenuItem { id: ctxHide; text: "隐藏应用"; icon: "visibility_off" }
     MenuItem { id: ctxMoveToCategory; text: "移动到分类"; icon: "drive_file_move" }
     MenuItem { id: ctxResetCategory; text: "恢复默认分类"; icon: "restart_alt" }
+    MenuItem { id: ctxUnhide; text: "取消隐藏"; icon: "visibility" }
+
+    // Dismiss overlay for hidden app context menu
+    MouseArea {
+        anchors.fill: parent
+        z: 399
+        visible: hiddenAppContextMenu.expanded
+        onClicked: {
+            hiddenAppContextMenu.expanded = false;
+            root.hiddenContextApp = null;
+        }
+    }
+
+    // Hidden app right-click context menu
+    Menu {
+        id: hiddenAppContextMenu
+
+        x: root.hiddenMenuX - implicitWidth / 2
+        y: root.hiddenMenuY + Appearance.spacing.small
+
+        z: 400
+        expanded: false
+        blurBackground: true
+        minWidth: 120
+
+        items: [ctxUnhide]
+
+        onItemSelected: item => {
+            if (item === ctxUnhide && root.hiddenContextApp) {
+                const appId = root.hiddenContextApp.id ?? "";
+                const hiddenApps = [...(Config.launcher.hiddenApps ?? [])];
+                const idx = hiddenApps.indexOf(appId);
+                if (idx !== -1) hiddenApps.splice(idx, 1);
+                Config.launcher.hiddenApps = hiddenApps;
+                Config.save();
+                if (hiddenApps.length === 0) root.showingHiddenApps = false;
+            }
+            hiddenAppContextMenu.expanded = false;
+            root.hiddenContextApp = null;
+        }
+    }
 
     // Dismiss overlay for move-to-category menu
     MouseArea {
@@ -712,6 +770,7 @@ Item {
         const pos = sourceItem.mapToItem(root, sourceItem.width / 2, sourceItem.height);
         catMenuX = pos.x;
         catMenuY = pos.y;
+        catContextMenu.active = null;
         catContextMenu.expanded = true;
         launcherMenu.expanded = false;
         appContextMenu.expanded = false;

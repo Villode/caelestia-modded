@@ -11,10 +11,15 @@ Item {
 
     required property var appEntry
     required property PersistentProperties visibilities
+    property int iconSize: 1  // 0=small, 1=medium, 2=large
 
     signal rightClicked(var sourceItem, var entry)
 
-    implicitWidth: 80
+    readonly property int iconBoxSize: iconSize === 0 ? 44 : (iconSize === 2 ? 72 : 56)
+    readonly property int iconImgSize: iconSize === 0 ? 32 : (iconSize === 2 ? 52 : 40)
+    readonly property int labelWidth: iconSize === 0 ? 60 : (iconSize === 2 ? 96 : 76)
+
+    implicitWidth: labelWidth + 4
     implicitHeight: iconCol.implicitHeight + Appearance.padding.normal
 
     width: implicitWidth
@@ -32,8 +37,8 @@ Item {
         Item {
             id: iconWrapper
 
-            width: 56
-            height: 56
+            width: root.iconBoxSize
+            height: root.iconBoxSize
             anchors.horizontalCenter: parent.horizontalCenter
 
             StyledRect {
@@ -46,8 +51,8 @@ Item {
                 id: icon
 
                 source: Quickshell.iconPath(root.appEntry?.icon, root.appEntry?.icon)
-                width: 40
-                height: 40
+                width: root.iconImgSize
+                height: root.iconImgSize
                 anchors.centerIn: parent
                 asynchronous: true
             }
@@ -72,7 +77,7 @@ Item {
             font.pointSize: Appearance.font.size.smaller
             color: Colours.palette.m3onSurface
             elide: Text.ElideRight
-            width: 76
+            width: root.labelWidth
             horizontalAlignment: Text.AlignHCenter
             maximumLineCount: 1
             anchors.horizontalCenter: parent.horizontalCenter

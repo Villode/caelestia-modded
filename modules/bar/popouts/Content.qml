@@ -115,6 +115,13 @@ Item {
         }
 
         Popout {
+            name: "brightness"
+            sourceComponent: BrightnessPopout {
+                wrapper: root.wrapper
+            }
+        }
+
+        Popout {
             name: "kblayout"
             sourceComponent: KbLayout {
                 wrapper: root.wrapper
