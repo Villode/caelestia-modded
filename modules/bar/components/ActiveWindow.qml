@@ -33,13 +33,22 @@ Item {
         return bar.height - otherHeight - bar.spacing * (bar.children.length - 1) - bar.vPadding * 2;
     }
     readonly property real lyricsAreaHeight: maxHeight - icon.implicitHeight - Appearance.spacing.small
+    property bool lyricsVertical: true
     property Title current: text1
 
     clip: true
-    implicitWidth: Math.max(icon.implicitWidth, showLyrics ? lyricsLabel.implicitWidth : current.implicitHeight)
-    implicitHeight: showLyrics
-        ? icon.implicitHeight + Math.min(lyricsLabel.implicitHeight, lyricsAreaHeight) + Appearance.spacing.small
-        : icon.implicitHeight + current.implicitWidth + current.anchors.topMargin
+    implicitWidth: {
+        if (showLyrics)
+            return Math.max(icon.implicitWidth, lyricsVertical ? vertLyrics.implicitWidth : rotLyrics.implicitHeight);
+        return Math.max(icon.implicitWidth, current.implicitHeight);
+    }
+    implicitHeight: {
+        if (showLyrics) {
+            const lh = lyricsVertical ? vertLyrics.implicitHeight : rotLyrics.implicitWidth;
+            return icon.implicitHeight + Math.min(lh, lyricsAreaHeight) + Appearance.spacing.small;
+        }
+        return icon.implicitHeight + current.implicitWidth + current.anchors.topMargin;
+    }
 
     Connections {
         target: Players.active
@@ -97,7 +106,7 @@ Item {
         }
     }
 
-    // --- Vertical lyrics with scroll ---
+    // --- Lyrics display (vertical for CJK, rotated for Latin) ---
     Item {
         id: lyricsClip
         visible: root.showLyrics
@@ -105,14 +114,18 @@ Item {
         anchors.horizontalCenter: icon.horizontalCenter
         anchors.top: icon.bottom
         anchors.topMargin: Appearance.spacing.small
-        width: lyricsLabel.implicitWidth
-        height: Math.min(lyricsLabel.implicitHeight, root.lyricsAreaHeight)
+        width: root.lyricsVertical ? vertLyrics.implicitWidth : rotLyrics.implicitHeight
+        height: {
+            const lh = root.lyricsVertical ? vertLyrics.implicitHeight : rotLyrics.implicitWidth;
+            return Math.min(lh, root.lyricsAreaHeight);
+        }
 
+        // Vertical mode (CJK)
         StyledText {
-            id: lyricsLabel
-            property real scrollY: 0
-
-            y: -scrollY
+            id: vertLyrics
+            visible: root.lyricsVertical
+            property real scrollVal: 0
+            y: -scrollVal
             font.pointSize: Appearance.font.size.smaller
             font.family: Appearance.font.family.mono
             color: Colours.palette.m3tertiary
@@ -120,11 +133,30 @@ Item {
             lineHeight: 1.1
         }
 
-        // Scroll animation when text overflows
+        // Rotated horizontal mode (Latin)
+        StyledText {
+            id: rotLyrics
+            visible: !root.lyricsVertical
+            property real scrollVal: 0
+            font.pointSize: Appearance.font.size.smaller
+            font.family: Appearance.font.family.mono
+            color: Colours.palette.m3tertiary
+            transform: [
+                Translate { x: -rotLyrics.scrollVal },
+                Rotation {
+                    angle: 90
+                    origin.x: rotLyrics.implicitHeight / 2
+                    origin.y: rotLyrics.implicitHeight / 2
+                }
+            ]
+            width: implicitHeight
+            height: implicitWidth
+        }
+
         NumberAnimation {
             id: scrollAnim
-            target: lyricsLabel
-            property: "scrollY"
+            target: root.lyricsVertical ? vertLyrics : rotLyrics
+            property: "scrollVal"
             from: 0
             duration: 3000
             easing.type: Easing.Linear
@@ -133,42 +165,41 @@ Item {
 
     onDisplayTextChanged: {
         if (!showLyrics) return;
-        // Vertical punctuation mapping (horizontal to vertical form)
-        const vPunct = new Map([
-            ["\uFF0C", "\uFE10"], // ， → ︐
-            ["\u3002", "\uFE12"], // 。 → ︒
-            ["\u3001", "\uFE11"], // 、 → ︑
-            ["\uFF1A", "\uFE13"], // ： → ︓
-            ["\uFF1B", "\uFE14"], // ； → ︔
-            ["\uFF01", "\uFE15"], // ！ → ︕
-            ["\uFF1F", "\uFE16"], // ？ → ︖
-            ["\u2026", "\uFE19"], // … → ︙
-            ["\u2014", "\uFE31"], // — → ︱
-            ["\u201C", "\uFE41"], // " → ﹁
-            ["\u201D", "\uFE42"], // " → ﹂
-            ["\u2018", "\uFE43"], // ' → ﹃
-            ["\u2019", "\uFE44"], // ' → ﹄
-            ["\uFF08", "\uFE35"], // （ → ︵
-            ["\uFF09", "\uFE36"], // ） → ︶
-            ["\u300A", "\uFE3F"], // 《 → ︿
-            ["\u300B", "\uFE40"], // 》 → ﹀
-            ["[", "\uFE47"],      // [ → ﹇
-            ["]", "\uFE48"],      // ] → ﹈
-            ["(", "\uFE35"],      // ( → ︵
-            [")", "\uFE36"],      // ) → ︶
-        ]);
-        const chars = Array.from(displayText);
-        const lines = [];
-        for (const ch of chars) {
-            if (/\s/.test(ch)) continue;
-            lines.push(vPunct.has(ch) ? vPunct.get(ch) : ch);
+        const cjkRe = /[\u4e00-\u9fff\u3400-\u4dbf]/g;
+        const cjkCount = (displayText.match(cjkRe) || []).length;
+        const isCJK = cjkCount > displayText.length * 0.3;
+        lyricsVertical = isCJK;
+
+        if (isCJK) {
+            const vPunct = new Map([
+                ["\uFF0C", "\uFE10"], ["\u3002", "\uFE12"], ["\u3001", "\uFE11"],
+                ["\uFF1A", "\uFE13"], ["\uFF1B", "\uFE14"], ["\uFF01", "\uFE15"],
+                ["\uFF1F", "\uFE16"], ["\u2026", "\uFE19"], ["\u2014", "\uFE31"],
+                ["\u201C", "\uFE41"], ["\u201D", "\uFE42"], ["\u2018", "\uFE43"],
+                ["\u2019", "\uFE44"], ["\uFF08", "\uFE35"], ["\uFF09", "\uFE36"],
+                ["\u300A", "\uFE3F"], ["\u300B", "\uFE40"],
+                ["[", "\uFE47"], ["]", "\uFE48"], ["(", "\uFE35"], [")", "\uFE36"],
+            ]);
+            const chars = Array.from(displayText);
+            const lines = [];
+            for (const ch of chars) {
+                if (/\s/.test(ch)) continue;
+                lines.push(vPunct.has(ch) ? vPunct.get(ch) : ch);
+            }
+            vertLyrics.text = lines.join("\n");
+            rotLyrics.text = "";
+            vertLyrics.scrollVal = 0;
+        } else {
+            rotLyrics.text = displayText;
+            vertLyrics.text = "";
+            rotLyrics.scrollVal = 0;
         }
-        lyricsLabel.text = lines.join("\n");
-        lyricsLabel.scrollY = 0;
         scrollAnim.stop();
 
         Qt.callLater(() => {
-            const overflow = lyricsLabel.implicitHeight - root.lyricsAreaHeight;
+            const overflow = isCJK
+                ? vertLyrics.implicitHeight - root.lyricsAreaHeight
+                : rotLyrics.implicitWidth - root.lyricsAreaHeight;
             if (overflow > 0) {
                 scrollAnim.to = overflow;
                 const dur = Lyrics.currentLineDuration;
